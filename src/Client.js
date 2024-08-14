@@ -888,7 +888,7 @@ class Client extends EventEmitter {
         options.groupMentions && !Array.isArray(options.groupMentions) && (options.groupMentions = [options.groupMentions]);
 
         let internalOptions = {
-            linkPreview: options.linkPreview === false ? undefined : true,
+            linkPreview: options.linkPreview === false ? undefined : false,
             sendAudioAsVoice: options.sendAudioAsVoice,
             sendVideoAsGif: options.sendVideoAsGif,
             sendMediaAsSticker: options.sendMediaAsSticker,
