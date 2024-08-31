@@ -863,6 +863,7 @@ class Client extends EventEmitter {
      * @property {boolean} [sendSeen=true] - Mark the conversation as seen after sending the message
      * @property {string} [invokedBotWid=undefined] - Bot Wid when doing a bot mention like @Meta AI
      * @property {string} [stickerAuthor=undefined] - Sets the author of the sticker, (if sendMediaAsSticker is true).
+     * @property {string} [stickerAvatar=undefined] - Sets the author of the sticker, (if sendMediaAsSticker is true).
      * @property {string} [stickerName=undefined] - Sets the name of the sticker, (if sendMediaAsSticker is true).
      * @property {string[]} [stickerCategories=undefined] - Sets the categories of the sticker, (if sendMediaAsSticker is true). Provide emoji char array, can be null.
      * @property {MessageMedia} [media] - Media to be sent
@@ -938,19 +939,37 @@ class Client extends EventEmitter {
             internalOptions.attachment = await Util.formatToWebpSticker(
                 internalOptions.attachment, {
                     name: options.stickerName,
+                    isAvatar: options.stickerAvatar,
                     author: options.stickerAuthor,
                     categories: options.stickerCategories
                 }, this.pupPage
             );
         }
 
-        const newMessage = await this.pupPage.evaluate(async (chatId, message, options, sendSeen) => {
+        const isBigFile = internalOptions.attachment?.data?.length > (1024 * 1024 * 79);
+
+        if (isBigFile) {
+            const middle = internalOptions.attachment.data.length / 2;
+            await this.pupPage.evaluate(async (chatId, chunk) => {
+                if (chunk) {
+                    window.Store[`mediaChunk_${chatId}`] = chunk;
+                }
+            }, chatId, internalOptions.attachment.data.substring(0, middle));
+            internalOptions.attachment.data = internalOptions.attachment.data.substring(middle);
+        }
+
+            const newMessage = await this.pupPage.evaluate(async (chatId, message, options, sendSeen) => {
             const chatWid = window.Store.WidFactory.createWid(chatId);
             const chat = await window.Store.Chat.find(chatWid);
 
 
             if (sendSeen) {
                 await window.WWebJS.sendSeen(chatId);
+            }
+            
+            if(options.attachment?.data && window.Store[`mediaChunk_${chatId}`]) {
+                options.attachment.data = window.Store[`mediaChunk_${chatId}`] + options.attachment.data;
+                delete window.Store[`mediaChunk_${chatId}`];
             }
 
             const msg = await window.WWebJS.sendMessage(chat, message, options, sendSeen);
@@ -959,6 +978,8 @@ class Client extends EventEmitter {
 
         return new Message(this, newMessage);
     }
+
+    
     
     /**
      * Searches for messages
