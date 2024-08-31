@@ -134,7 +134,8 @@ class Util {
      * Sticker metadata.
      * @typedef {Object} StickerMetadata
      * @property {string} [name] 
-     * @property {string} [author] 
+     * @property {string} [author]
+     * @property {string} [isAvatar]
      * @property {string[]} [categories]
      */
 
@@ -145,7 +146,7 @@ class Util {
      * 
      * @returns {Promise<MessageMedia>} media in webp format
      */
-    static async formatToWebpSticker(media, metadata, pupPage) {
+    /*static async formatToWebpSticker(media, metadata, pupPage) {
         let webpMedia;
 
         if (media.mimetype.includes('webp'))
@@ -170,6 +171,42 @@ class Util {
                 "ios-app-store-link": metadata.iOSApp ? metadata.iOSApp : '',
                 "emojis": metadata.categories ? metadata.categories : [],
                 "is-avatar-sticker": metadata.isAvatar ? metadata.isAvatar : 0
+            };
+            let exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
+            let jsonBuffer = Buffer.from(JSON.stringify(json), 'utf8');
+            let exif = Buffer.concat([exifAttr, jsonBuffer]);
+            exif.writeUIntLE(jsonBuffer.length, 14, 4);
+            await img.load(Buffer.from(webpMedia.data, 'base64'));
+            img.exif = exif;
+            webpMedia.data = (await img.save(null)).toString('base64');
+        }
+
+        return webpMedia;
+    }*/
+   static async formatToWebpSticker(media, metadata, pupPage) {
+        let webpMedia;
+
+        if (media.mimetype.includes('image'))
+            webpMedia = await this.formatImageToWebpSticker(media, pupPage);
+        else if (media.mimetype.includes('video'))
+            webpMedia = await this.formatVideoToWebpSticker(media);
+        else
+            throw new Error('Invalid media format');
+
+        if (metadata.name || metadata.author) {
+            const img = new webp.Image();
+            const hash = this.generateHash(32);
+            const stickerPackId = hash;
+            const packname = metadata.name;
+            const author = metadata.author;
+            const avatar = metadata.isAvatar ? metadata.isAvatar : 0
+            const categories = metadata.categories || [''];
+            const json = { 
+                'sticker-pack-id': stickerPackId,
+                'sticker-pack-name': packname,
+                'sticker-pack-publisher': author,
+                'emojis': categories,
+                "is-avatar-sticker": avatar
             };
             let exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
             let jsonBuffer = Buffer.from(JSON.stringify(json), 'utf8');
