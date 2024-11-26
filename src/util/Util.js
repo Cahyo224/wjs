@@ -100,7 +100,7 @@ class Util {
                     'libwebp',
                     '-vf',
                     // eslint-disable-next-line no-useless-escape
-                    'scale=\'iw*min(250/iw\,250/ih)\':\'ih*min(250/iw\,250/ih)\',format=rgba,pad=260:250:\'(250-iw)/2\':\'(250-ih)/2\':\'#00000000\',setsar=1,fps=30',
+                    'scale=\'iw*min(500/iw\,500/ih)\':\'ih*min(500/iw\,500/ih)\',format=rgba,pad=500:500:\'(500-iw)/2\':\'(500-ih)/2\':\'#00000000\',setsar=1,fps=30',
                     '-fs', '1M',
                     '-loop',
                     '0',
